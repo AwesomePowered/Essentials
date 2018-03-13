@@ -470,7 +470,7 @@ public class EssentialsPlayerListener implements Listener {
             LOGGER.info(tl("mutedUserSpeaks", player.getName(), event.getMessage()));
             return;
         }
-        
+
         boolean broadcast = true; // whether to broadcast the updated activity
         boolean update = true; // Only modified when the command is afk
 
@@ -491,14 +491,14 @@ public class EssentialsPlayerListener implements Listener {
         if (ess.getSettings().isCommandCooldownsEnabled() && pluginCommand != null
             && !user.isAuthorized("essentials.commandcooldowns.bypass")) {
             int argStartIndex = event.getMessage().indexOf(" ");
-            String args = argStartIndex == -1 ? "" // No arguments present 
+            String args = argStartIndex == -1 ? "" // No arguments present
                 : " " + event.getMessage().substring(argStartIndex); // arguments start at argStartIndex; substring from there.
             String fullCommand = pluginCommand.getName() + args;
 
             // Used to determine whether a user already has an existing cooldown
             // If so, no need to check for (and write) new ones.
             boolean cooldownFound = false;
-            
+
             // Iterate over a copy of getCommandCooldowns in case of concurrent modifications
             for (Entry<Pattern, Long> entry : new HashMap<>(user.getCommandCooldowns()).entrySet()) {
                 // Remove any expired cooldowns
@@ -776,26 +776,36 @@ public class EssentialsPlayerListener implements Listener {
         final User user = ess.getUser(event.getPlayer());
         user.updateActivity(true);
     }
-    
+
     private final class PlayerListenerPre1_12 implements Listener {
 
         @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
         public void onPlayerPickupItem(final org.bukkit.event.player.PlayerPickupItemEvent event) {
+            User user = ess.getUser(event.getPlayer());
+            if (user.isVanished()) {
+                event.setCancelled(true);
+            }
             if (ess.getSettings().getDisableItemPickupWhileAfk()) {
-                if (ess.getUser(event.getPlayer()).isAfk()) {
+                if (user.isAfk()) {
                     event.setCancelled(true);
                 }
             }
         }
     }
-    
+
     private final class PlayerListener1_12 implements Listener {
 
         @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
         public void onPlayerPickupItem(final org.bukkit.event.entity.EntityPickupItemEvent event) {
-            if (ess.getSettings().getDisableItemPickupWhileAfk() && event.getEntity() instanceof Player) {
-                if (ess.getUser((Player) event.getEntity()).isAfk()) {
+            if (event.getEntity() instanceof Player) {
+                User user = ess.getUser(event.getEntity());
+                if (user.isVanished()) {
                     event.setCancelled(true);
+                }
+                if (ess.getSettings().getDisableItemPickupWhileAfk()) {
+                    if (user.isAfk()) {
+                        event.setCancelled(true);
+                    }
                 }
             }
         }
